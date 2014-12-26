@@ -46,6 +46,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'utils.middlewares.ExceptionMiddleware',
 )
 
 ROOT_URLCONF = 'douban2kindle.urls'
@@ -81,3 +82,42 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.7/howto/static-files/
 
 STATIC_URL = '/static/'
+
+# logging
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'filters': {
+        'require_debug_false': {
+            '()': 'django.utils.log.RequireDebugFalse'
+        }
+    },
+    'root': {
+        'handlers': ['file'],
+        'level': 'DEBUG',
+        'propagate': True,
+    },
+    'handlers': {
+        'file': {
+            'formatter': 'default',
+            'class': 'logging.handlers.TimedRotatingFileHandler',
+            'filename': os.path.expanduser('~/logs/douban.log'),
+            'when': 'D',
+            'interval': 1,
+            'backupCount': 365,
+        },
+    },
+    'loggers': {
+        'root': {
+            'handlers': ['file'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+    },
+    'formatters': {
+        'default': {
+            'format': '%(asctime)s %(levelname)-2s %(name)s.%(funcName)s:%(lineno)-5d %(message)s',
+        },
+    },
+}
