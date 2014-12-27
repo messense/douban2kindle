@@ -14,6 +14,9 @@ from django.utils.encoding import smart_text
 from utils.decrypt import decrypt
 from utils.html import HTMLPage
 
+from . import tasks
+from .models import Book
+
 
 class SendView(View):
 
@@ -46,15 +49,65 @@ class SendView(View):
         author_id = smart_text(data.get('authorId', '')).strip()
         book_size = len(book_data)
 
-        image_srcs, html_path = self._save_book_html(
-            title,
-            subtitle,
-            author,
-            translator,
-            posts.get('contents', [])
+        book_id = '{author}_{title}_{size}'.format(
+            author=author,
+            title=title,
+            size=book_size
         )
+        try:
+            # try get from database
+            book = Book.objects.get(book_id=book_id)
+        except Book.DoesNotExist:
+            # create book
+            book = Book.objects.create(
+                book_id=book_id,
+                author=author,
+                title=title,
+                subtitle=subtitle,
+                size=book_size,
+                path=''
+            )
 
-        import pdb; pdb.set_trace()
+            # save book html
+            image_srcs, html_path = self._save_book_html(
+                title,
+                subtitle,
+                author,
+                translator,
+                posts.get('contents', [])
+            )
+
+            # save images to db
+            for src in image_srcs:
+                book.images.create(
+                    src=src,
+                    path=''
+                )
+
+        if not book.path:
+            async_result = tasks.generate_mobi_ebook.delay(book_id)
+            res = async_result.get()
+            if not res:
+                ret_dict['status'] = 'WARN'
+                ret_dict['msg'] = '生成电子书失败！'
+                return JsonResponse(ret_dict)
+
+        # Refetch book
+        book = Book.objects.get(pk=book.id)
+        async_result = tasks.send_mail.delay(
+            'EBook',
+            '',
+            to=[to_mail],
+            attachments=[book.path]
+        )
+        res = async_result.get()
+        if not res:
+            ret_dict['status'] = 'WARN'
+            ret_dict['msg'] = '电子书投递邮件发送失败！'
+        else:
+            ret_dict['status'] = 'SUCCESS'
+            ret_dict['msg'] = ''
+        return JsonResponse(ret_dict)
 
     def _save_book_html(self, title, subtitle, author, translator, contents):
         page = HTMLPage(title, subtitle, author, translator)

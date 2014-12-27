@@ -21,5 +21,8 @@ def convert(input_path, output_path, author):
             '--page-breaks-before',
             '//*[@class="pagebreak"]'
         ])
-    except OSError:
+    except:
         logger.exception('Error calling ebook-convert.')
+        return False
+    else:
+        return True
