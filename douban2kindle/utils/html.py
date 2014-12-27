@@ -5,6 +5,7 @@ import logging
 
 from django.conf import settings
 from django.utils.encoding import smart_text, smart_bytes
+from django.utils import six
 
 from . import markup
 
@@ -44,6 +45,7 @@ class HTMLPage(object):
             self.author,
             self.title
         )
+        self.image_srcs = []
         self._html = ''
 
     def create(self, contents):
@@ -81,6 +83,8 @@ class HTMLPage(object):
                     logger.warn('Get medium image failed')
                 # get image src
                 image_src = medium.get('src')
+                self.image_srcs.append(image_src)
+
                 image_name = image_src[image_src.rfind('/') + 1:]
                 image_path = os.path.join(self.image_dir, image_name)
                 self.page.img(
@@ -126,7 +130,7 @@ class HTMLPage(object):
                             style=self._get_text_style(text_format)
                         )
         # render book HTML end
-        self._html = smart_text(self.page)
+        self._html = six.text_type(self.page)
 
     @property
     def html(self):
