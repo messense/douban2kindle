@@ -65,6 +65,6 @@ function send(request, callback){
     }).done(function(response){
 	callback(response);
     }).fail(function(){
-	callback({status:'FAIL', msg:'推送请求失败，请稍候再试，或联系：<a href="mailto:hyqiu.syen@gmail.com">hyqiu.syen@gmail.com</a>'});
+	callback({status:'FAIL', msg:'推送请求失败，请稍候再试'});
     });
 }

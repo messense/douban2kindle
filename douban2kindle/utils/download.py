@@ -20,6 +20,8 @@ def _download_image(url, save_dir):
     save_path = os.path.join(save_dir, image_name)
     with open(save_path, 'w') as f:
         f.write(data)
+
+    logger.info('Download image %s succeed, saved to %s', url, save_path)
     return save_path
 
 

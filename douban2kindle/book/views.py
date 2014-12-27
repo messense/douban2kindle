@@ -106,7 +106,7 @@ class SendView(View):
             ret_dict['msg'] = '电子书投递邮件发送失败！'
         else:
             ret_dict['status'] = 'SUCCESS'
-            ret_dict['msg'] = ''
+            ret_dict['msg'] = '推送成功，请稍后查看您的 Kindle'
         return JsonResponse(ret_dict)
 
     def _save_book_html(self, title, subtitle, author, translator, contents):

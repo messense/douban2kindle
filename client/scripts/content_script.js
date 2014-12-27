@@ -52,7 +52,7 @@ function getArticleInfo(callback){
     var article = $(".article");
     var result = {};
     if(article.length!=1){
-	result['msg'] = '获取文章信息失败，请稍候再试，或联系：hyqiu.syen@gmail.com';
+	result['msg'] = '获取文章信息失败，请稍候再试';
 	result['status'] = 'FAIL';
 	showResultMsg(result);
 	return;
@@ -160,7 +160,7 @@ function tryGetReadData(book_id, callback){
             call_result(data, callback);
         },
         error: function (XMLHttpRequest, textStatus, errorThrown) {
-            get_error_msg('获取文章信息失败，请稍候再试，或联系：hyqiu.syen@gmail.com', 'FAIL');
+            get_error_msg('获取文章信息失败，请稍候再试', 'FAIL');
         }
     });
 }
