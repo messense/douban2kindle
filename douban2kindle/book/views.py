@@ -1,15 +1,18 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
+import os
 try:
     import simplejson as json
 except ImportError:
     import json
 
+from django.conf import settings
 from django.http import JsonResponse
 from django.views.generic import View
 from django.utils.encoding import smart_text
 
 from utils.decrypt import decrypt
+from utils.html import HTMLPage
 
 
 class SendView(View):
@@ -43,4 +46,19 @@ class SendView(View):
         author_id = smart_text(data.get('authorId', '')).strip()
         book_size = len(book_data)
 
+        image_srcs, html_path = self._save_book_html(
+            title,
+            subtitle,
+            author,
+            translator,
+            posts.get('contents', [])
+        )
+
         import pdb; pdb.set_trace()
+
+    def _save_book_html(self, title, subtitle, author, translator, contents):
+        page = HTMLPage(title, subtitle, author, translator)
+        page.create(contents)
+        image_srcs = page.image_srcs
+        html_path = page.save()
+        return image_srcs, html_path
