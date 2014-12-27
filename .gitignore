@@ -58,3 +58,4 @@ target/
 
 .ropeproject
 douban2kindle/statc/books/
+douban2kindle/douban2kindle/local_settings.py
