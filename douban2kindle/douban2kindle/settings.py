@@ -147,6 +147,8 @@ LOGGING = {
 BROKER_URL = 'amqp://guest:guest@localhost:5672//'
 # Celery result backend
 CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+# Celery serializer
+CELERY_ACCEPT_CONTENT = ['pickle', 'json', 'msgpack', 'yaml']
 
 # Book save path
 BOOK_BASE_PATH = os.path.join(BASE_DIR, 'static', 'books')
