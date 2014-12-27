@@ -11,13 +11,16 @@ logger = logging.getLogger(__name__)
 
 @shared_task
 def send_mail(subject='', body='', from_email=None, to=None, attachments=None):
+    attachments = attachments or []
     email = EmailMessage(
         subject,
         body,
         from_email,
         to,
-        attachments=attachments
     )
+    if attachments:
+        for attachment in attachments:
+            email.attach_file(attachment)
     try:
         email.send()
     except Exception as e:
