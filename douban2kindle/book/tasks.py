@@ -5,6 +5,9 @@ import logging
 from celery import shared_task
 from django.core.mail import EmailMessage
 
+from utils.calibre import convert
+from utils.download import download_images
+
 
 logger = logging.getLogger(__name__)
 
@@ -32,3 +35,8 @@ def send_mail(subject='', body='', from_email=None, to=None, attachments=None):
         return False
     else:
         return True
+
+
+@shared_task
+def generate_mobi_ebook(book_id):
+    pass
