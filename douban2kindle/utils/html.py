@@ -39,12 +39,14 @@ class HTMLPage(object):
         # image types
         self.image_types = ('medium', 'orig', 'small', 'tiny', 'large')
         # image storage path
-        self.image_dir = os.path.join(
-            settings.STATICFILES_DIRS[0],
-            'images',
+        self.book_dir = os.path.join(
+            settings.BOOK_BASE_PATH,
             self.author,
             self.title
         )
+        if not os.path.exists(self.book_dir):
+            os.makedirs(self.book_dir)
+
         self.image_srcs = []
         self._html = ''
 
@@ -86,7 +88,7 @@ class HTMLPage(object):
                 self.image_srcs.append(image_src)
 
                 image_name = image_src[image_src.rfind('/') + 1:]
-                image_path = os.path.join(self.image_dir, image_name)
+                image_path = 'images/{name}'.format(name=image_name)
                 self.page.img(
                     width=origin['width'],
                     height=origin['height'],
@@ -136,9 +138,9 @@ class HTMLPage(object):
     def html(self):
         return self._html
 
-    def save(self, path):
-        filename = '{title}.html'.format(self.title)
-        filepath = os.path.join(path, filename)
+    def save(self):
+        filename = 'book.html'
+        filepath = os.path.join(self.book_dir, filename)
         with open(filepath, 'w') as f:
             f.write(smart_bytes(self._html))
         return filepath
