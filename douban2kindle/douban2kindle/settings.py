@@ -93,11 +93,6 @@ LOGGING = {
             '()': 'django.utils.log.RequireDebugFalse'
         }
     },
-    'root': {
-        'handlers': ['file'],
-        'level': 'DEBUG',
-        'propagate': True,
-    },
     'handlers': {
         'file': {
             'formatter': 'default',
@@ -107,12 +102,22 @@ LOGGING = {
             'interval': 1,
             'backupCount': 365,
         },
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'default',
+        },
     },
     'loggers': {
         'root': {
-            'handlers': ['file'],
+            'handlers': ['file', 'console'],
             'level': 'DEBUG',
             'propagate': True,
+        },
+        'django.request': {
+            'handlers': ['console'],
+            'level': 'ERROR',
+            'propagate': False,
         },
     },
     'formatters': {
@@ -121,3 +126,13 @@ LOGGING = {
         },
     },
 }
+
+# Celery broker url
+BROKER_URL = ''
+# Celery result backend
+CELERY_RESULT_BACKEND = ''
+
+try:
+    from local_settings import *
+except ImportError:
+    pass
