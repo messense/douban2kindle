@@ -26,6 +26,13 @@ TEMPLATE_DEBUG = True
 
 ALLOWED_HOSTS = []
 
+# Email settings
+EMAIL_HOST = ''
+EMAIL_PORT = 25
+EMAIL_HOST_USER = ''
+EMIAL_HOST_PASSWORD = ''
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
 
 # Application definition
 
@@ -137,9 +144,9 @@ LOGGING = {
 }
 
 # Celery broker url
-BROKER_URL = ''
+BROKER_URL = 'amqp://guest:guest@localhost:5672//'
 # Celery result backend
-CELERY_RESULT_BACKEND = ''
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
 
 # Book save path
 BOOK_BASE_PATH = os.path.join(BASE_DIR, 'static', 'books')
