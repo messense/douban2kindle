@@ -10,6 +10,7 @@ class Book(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
     path = models.CharField(max_length=500, null=True, blank=True)
+    cover = models.CharField(max_length=500, null=True, blank=True)
 
 
 class BookImage(models.Model):

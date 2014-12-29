@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
 import os
+import urllib2
 import logging
 
 from celery import shared_task
@@ -61,6 +62,25 @@ def generate_mobi_ebook(book_id):
     images_dir = os.path.join(book_dir, 'images')
     book_path = os.path.join(book_dir, 'book.html')
 
+    # Download book cover
+    if book.cover and book.cover.startswith('http://'):
+        try:
+            data = urllib2.urlopen(book.cover).read()
+        except urllib2.URLError:
+            logger.exception('Error downloading cover image: %s', book.cover)
+        else:
+            cover_path = os.path.join(book_dir, 'cover.jpg')
+            with open(cover_path, 'w') as f:
+                f.write(data)
+
+            book.cover = cover_path
+            book.save()
+            logger.info(
+                'Download cover image %s succeed, saved to %s',
+                book.cover,
+                cover_path
+            )
+
     images = book.images.all()
     if images:
         nonexist_imgs = [img for img in images if not _image_exists(img.path)]
@@ -74,7 +94,7 @@ def generate_mobi_ebook(book_id):
                 image.save()
 
     ebook_path = os.path.join(book_dir, 'book.mobi')
-    succeed = convert(book_path, ebook_path, book.author)
+    succeed = convert(book_path, ebook_path, book.author, book.cover)
     if not succeed:
         logger.warning(
             'Generate mobi ebook failed, author: %s, title: %s, subtitle: %s',

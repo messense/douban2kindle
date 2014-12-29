@@ -8,9 +8,9 @@ import subprocess
 logger = logging.getLogger(__name__)
 
 
-def convert(input_path, output_path, author):
+def convert(input_path, output_path, author, cover=None):
     try:
-        subprocess.call([
+        args = [
             'ebook-convert',
             input_path,
             output_path,
@@ -20,9 +20,20 @@ def convert(input_path, output_path, author):
             'none',
             '--page-breaks-before',
             '//*[@class="pagebreak"]'
-        ])
+        ]
+        if cover and not cover.startswith('http://') and os.path.exists(cover):
+            args.extend(['--cover', cover, '--prefer-metadata-cover'])
+
+        status = subprocess.call(args)
     except:
         logger.exception('Error calling ebook-convert.')
         return False
     else:
-        return True
+        if status == 0:
+            return True
+    logger.error(
+        'Error convert ebook, input: %s, output: %s',
+        input_path,
+        output_path
+    )
+    return False

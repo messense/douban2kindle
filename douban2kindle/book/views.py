@@ -25,6 +25,7 @@ class SendView(View):
         # Parse request data
         to_mail = request.POST.get('toMail')
         book_data = request.POST.get('bookData')
+        book_cover = request.POST.get('bookCover')
 
         if not (to_mail and book_data):
             ret_dict['status'] = 'WARN'
@@ -59,6 +60,7 @@ class SendView(View):
             translator,
             title,
             subtitle,
+            book_cover,
             book_size,
             posts.get('contents', [])
         )
@@ -101,6 +103,7 @@ class SendView(View):
                             translator,
                             title,
                             subtitle,
+                            book_cover,
                             book_size,
                             contents):
         try:
@@ -114,6 +117,7 @@ class SendView(View):
                 title=title,
                 subtitle=subtitle,
                 size=book_size,
+                cover=book_cover,
                 path=''
             )
 
