@@ -13,7 +13,7 @@ class Book(models.Model):
 
 
 class BookImage(models.Model):
-    src = models.CharField(max_length=500)
+    src = models.CharField(max_length=500, db_index=True)
     path = models.CharField(max_length=500, null=True, blank=True)
     book = models.ForeignKey(Book, related_name='images')
     created = models.DateTimeField(auto_now_add=True)
