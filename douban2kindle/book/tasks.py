@@ -43,6 +43,11 @@ def send_mail(subject='', body='', to=None, attachments=None):
 
 @shared_task
 def generate_mobi_ebook(book_id):
+
+    def _image_exists(path):
+        """Check whether path exists or not"""
+        return path and os.path.exists(path)
+
     try:
         book = Book.objects.get(book_id=book_id)
     except Book.DoesNotExist:
@@ -58,11 +63,12 @@ def generate_mobi_ebook(book_id):
 
     images = book.images.all()
     if images:
-        image_urls = [img.src for img in images]
+        nonexist_imgs = [img for img in images if not _image_exists(img.path)]
+        image_urls = [img.src for img in nonexist_imgs]
         # download book images
         local_images = download_images(image_urls, images_dir)
 
-        for index, image in enumerate(images):
+        for index, image in enumerate(nonexist_imgs):
             if local_images[index]:
                 image.path = local_images[index]
                 image.save()

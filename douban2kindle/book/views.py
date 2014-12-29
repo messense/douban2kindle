@@ -6,7 +6,6 @@ try:
 except ImportError:
     import json
 
-from django.conf import settings
 from django.http import JsonResponse
 from django.views.generic import View
 from django.utils.encoding import smart_text
@@ -46,7 +45,6 @@ class SendView(View):
         subtitle = smart_text(posts.get('subtitle', '')).strip()
         author = smart_text(posts.get('orig_author', '')).strip()
         translator = smart_text(posts.get('translator', '')).strip()
-        author_id = smart_text(data.get('authorId', '')).strip()
         book_size = len(book_data)
 
         book_id = '{author}_{title}_{size}'.format(
@@ -54,37 +52,18 @@ class SendView(View):
             title=title,
             size=book_size
         )
-        try:
-            # try get from database
-            book = Book.objects.get(book_id=book_id)
-        except Book.DoesNotExist:
-            # create book
-            book = Book.objects.create(
-                book_id=book_id,
-                author=author,
-                title=title,
-                subtitle=subtitle,
-                size=book_size,
-                path=''
-            )
 
-            # save book html
-            image_srcs, html_path = self._save_book_html(
-                title,
-                subtitle,
-                author,
-                translator,
-                posts.get('contents', [])
-            )
+        book = self._get_or_create_book(
+            book_id,
+            author,
+            translator,
+            title,
+            subtitle,
+            book_size,
+            posts.get('contents', [])
+        )
 
-            # save images to db
-            for src in image_srcs:
-                book.images.create(
-                    src=src,
-                    path=''
-                )
-
-        if not book.path:
+        if not book.path or not os.path.exists(book.path):
             async_result = tasks.generate_mobi_ebook.delay(book_id)
             res = async_result.get()
             if not res:
@@ -115,3 +94,43 @@ class SendView(View):
         image_srcs = page.image_srcs
         html_path = page.save()
         return image_srcs, html_path
+
+    def _get_or_create_book(self,
+                            book_id,
+                            author,
+                            translator,
+                            title,
+                            subtitle,
+                            book_size,
+                            contents):
+        try:
+            # try get from database
+            book = Book.objects.get(book_id=book_id)
+        except Book.DoesNotExist:
+            # create book
+            book = Book.objects.create(
+                book_id=book_id,
+                author=author,
+                title=title,
+                subtitle=subtitle,
+                size=book_size,
+                path=''
+            )
+
+            # save book html
+            image_srcs, html_path = self._save_book_html(
+                title,
+                subtitle,
+                author,
+                translator,
+                contents
+            )
+
+            # save images to db
+            for src in image_srcs:
+                book.images.create(
+                    src=src,
+                    path=''
+                )
+
+        return book
