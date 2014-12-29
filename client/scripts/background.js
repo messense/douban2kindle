@@ -47,24 +47,28 @@ function set_icon(tab_id, icon) {
    推送请求
 **/
 function send(request, callback){
-    var articleData = {};
-    var splitData = request.bookData.split(':');
-    var book_data = splitData[1].replace(/\n/g, '');
-    articleData['bookData'] = book_data;
-    articleData['bookTitle'] = splitData[0];
-    articleData['toMail'] = localStorage.TO_MAIL;
-    articleData['requestId'] = request.requestId;
-    $.ajax({
-	//url: 'http://gk7.pw:8000/send',
-    url: 'http://localhost:9999/book/send',
-    //url: 'http://192.168.3.167:8000/send',
-	data: articleData,
-	dataType: 'json',
-	type: 'POST',
-	timeout: 60*1000// 60秒超时
-    }).done(function(response){
-	callback(response);
-    }).fail(function(){
-	callback({status:'FAIL', msg:'推送请求失败，请稍候再试'});
+    chrome.tabs.getSelected(function(tab){
+        var bookId = tab.url.split('/')[5];
+        var articleData = {};
+        var splitData = request.bookData.split(':');
+        var book_data = splitData[1].replace(/\n/g, '');
+        articleData['bookData'] = book_data;
+        articleData['bookTitle'] = splitData[0];
+        articleData['toMail'] = localStorage.TO_MAIL;
+        articleData['requestId'] = request.requestId;
+        articleData['bookCover'] = 'http://img3.douban.com/view/ark_article_cover/retina/public/' + bookId + '.jpg';
+        $.ajax({
+            //url: 'http://gk7.pw:8000/send',
+            url: 'http://localhost:9999/book/send',
+            //url: 'http://192.168.3.167:8000/send',
+            data: articleData,
+            dataType: 'json',
+            type: 'POST',
+            timeout: 60*1000// 60秒超时
+        }).done(function(response){
+            callback(response);
+        }).fail(function(){
+            callback({status:'FAIL', msg:'推送请求失败，请稍候再试'});
+        });
     });
 }
