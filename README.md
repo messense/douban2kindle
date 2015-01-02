@@ -52,3 +52,7 @@ Chrome 客户端代码在 client 文件夹中，通过开发中模式加载。
 
 1. 修改插件推送的后台地址 URL，编辑 client/scripts/background.js，在 send 函数中修改 URL 地址，和上面服务器端启动的 IP /端口对应
 2. 在chrome浏览器中的地址栏中输入：chrome://extensions/，点击 加载正在开发的扩展程序，选择 client 文件夹即可
+
+## License
+
+Licensed under GPL v2, see [LICENSE](LICENSE) for detail.
