@@ -73,66 +73,91 @@ class HTMLPage(object):
 
             if content_type == 'pagebreak':
                 # page break
-                self.page.p(('',), class_='pagebreak')
+                self._render_pagebreak(content_data)
             elif content_type == 'illus':
-                # image
-                self.page.div()
-                # get original image size
-                origin = content_data.get('size').get('orig')
-                # get medium image size
-                medium = self._get_image(content_data)
-                if not medium:
-                    logger.warn('Get medium image failed')
-                # get image src
-                image_src = medium.get('src')
-                self.image_srcs.append(image_src)
-
-                image_name = image_src[image_src.rfind('/') + 1:]
-                image_path = 'images/{name}'.format(name=image_name)
-                self.page.img(
-                    width=origin['width'],
-                    height=origin['height'],
-                    src=image_path
-                )
-                # image legend
-                legend = content_data.get('legend')
-                if legend:
-                    self.page.label(
-                        smart_text(legend),
-                        style='color:#555; font-size:.75em; line-height:1.5;'
-                    )
-                self.page.div.close()
+                self._render_illus(content_data)
+            elif content_type == 'headline':
+                self._render_headline(content_data)
+            elif content_type == 'paragraph':
+                self._render_paragraph(content_data)
+            elif content_type == 'code':
+                self._render_code(content_data)
             else:
-                text = content_data.get('text')
-                if not text:
-                    text = '&nbsp;'
-                if content_type == 'headline':
-                    self.page.h2(
-                        (smart_text(text),),
-                        class_='chapter',
-                        style='text-align:center; line-height:2; font-size:13px; min-height: 2em;'
-                    )
-                elif content_type == 'paragraph':
-                    text_format = content_data.get('format')
-                    if isinstance(text, list):
-                        # multiple content with footnotes
-                        plaintexts, footnotes = self._get_text_list(text)
-                        self.page.p(
-                            (''.join(plaintexts),),
-                            style=self._get_text_style(text_format)
-                        )
-                        if footnotes:
-                            self.page.p(
-                                tuple(footnotes),
-                                style='color:#333;font-size:13px;'
-                            )
-                    else:
-                        self.page.p(
-                            (smart_text(text),),
-                            style=self._get_text_style(text_format)
-                        )
+                logger.error('Unknow type: %s', content_type)
+
         # render book HTML end
         self._html = six.text_type(self.page)
+
+    def _render_pagebreak(self, data):
+        # page break
+        self.page.p(('',), class_='pagebreak')
+
+    def _render_illus(self, data):
+        # image
+        self.page.div()
+        # get original image size
+        origin = data.get('size').get('orig')
+        # get medium image size
+        medium = self._get_image(data)
+        if not medium:
+            logger.warn('Get medium image failed')
+        # get image src
+        image_src = medium.get('src')
+        self.image_srcs.append(image_src)
+
+        image_name = image_src[image_src.rfind('/') + 1:]
+        image_path = 'images/{name}'.format(name=image_name)
+        self.page.img(
+            width=origin['width'],
+            height=origin['height'],
+            src=image_path
+        )
+        # image legend
+        legend = data.get('legend')
+        if legend:
+            self.page.label(
+                smart_text(legend),
+                style='color:#555; font-size:.75em; line-height:1.5;'
+            )
+        self.page.div.close()
+
+    def _render_paragraph(self, data):
+        text = data.get('text')
+        if not text:
+            text = '&nbsp;'
+        text_format = data.get('format')
+        if isinstance(text, list):
+            # multiple content with footnotes
+            plaintexts, footnotes = self._get_text_list(text)
+            self.page.p(
+                (''.join(plaintexts),),
+                style=self._get_text_style(text_format)
+            )
+            if footnotes:
+                self.page.p(
+                    tuple(footnotes),
+                    style='color:#333;font-size:13px;'
+                )
+        else:
+            self.page.p(
+                (smart_text(text),),
+                style=self._get_text_style(text_format)
+            )
+
+    def _render_code(self, data):
+        code = data.get('text')
+        lang = data.get('language')
+        # TODO: render code
+
+    def _render_headline(self, data):
+        text = data.get('text')
+        if not text:
+            text = '&nbsp;'
+        self.page.h2(
+            (smart_text(text),),
+            class_='chapter',
+            style='text-align:center; line-height:2; font-size:13px; min-height: 2em;'
+        )
 
     @property
     def html(self):
@@ -176,9 +201,12 @@ class HTMLPage(object):
                     desc = '[{index}]'.format(index=index)
                     plaintexts.append(desc)
                     index += 1
-                elif kind == 'footnote':
-                    footnotes.append('{desc}{content}'.format(
-                        desc=desc,
-                        content=content
-                    ))
+            elif kind == 'footnote':
+                footnotes.append('{desc}{content}'.format(
+                    desc=desc,
+                    content=content
+                ))
+            elif kind == 'code':
+                # TODO: render inline code style
+                plaintexts.append(content)
         return plaintexts, footnotes
