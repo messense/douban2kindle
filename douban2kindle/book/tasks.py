@@ -62,6 +62,11 @@ def generate_mobi_ebook(book_id):
     images_dir = os.path.join(book_dir, 'images')
     book_path = os.path.join(book_dir, 'book.html')
 
+    # mkdirs
+    if not os.path.exists(book_dir):
+        os.makedirs(book_dir)
+        os.makedirs(images_dir)
+
     # Download book cover
     if book.cover and book.cover.startswith('http://'):
         try:

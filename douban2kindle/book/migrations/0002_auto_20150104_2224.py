@@ -44,7 +44,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='bookimage',
             name='src',
-            field=models.CharField(max_length=500, db_index=True),
+            field=models.CharField(max_length=255, db_index=True),
             preserve_default=True,
         ),
     ]

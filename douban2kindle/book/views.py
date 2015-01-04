@@ -6,6 +6,7 @@ try:
 except ImportError:
     import json
 
+from django.conf import settings
 from django.http import JsonResponse
 from django.views.generic import View
 from django.utils.encoding import smart_text
@@ -41,11 +42,12 @@ class SendView(View):
             ret_dict['msg'] = '图书数据解析出错！'
             return JsonResponse(ret_dict)
 
-        posts = data['posts'][0]
-        title = smart_text(posts.get('title', '')).strip()
-        subtitle = smart_text(posts.get('subtitle', '')).strip()
-        author = smart_text(posts.get('orig_author', '')).strip()
-        translator = smart_text(posts.get('translator', '')).strip()
+        posts = data['posts']
+        last_post = posts[-1]
+        title = smart_text(last_post.get('title', '')).strip()
+        subtitle = smart_text(last_post.get('subtitle', '')).strip()
+        author = smart_text(last_post.get('orig_author', '')).strip()
+        translator = smart_text(last_post.get('translator', '')).strip()
         book_size = len(book_data)
 
         book_id = '{author}_{title}_{size}'.format(
@@ -62,7 +64,7 @@ class SendView(View):
             subtitle,
             book_cover,
             book_size,
-            posts.get('contents', [])
+            posts
         )
 
         if not book.path or not os.path.exists(book.path):
@@ -90,9 +92,9 @@ class SendView(View):
             ret_dict['msg'] = '推送成功，请稍后查看您的 Kindle'
         return JsonResponse(ret_dict)
 
-    def _save_book_html(self, title, subtitle, author, translator, contents):
-        page = HTMLPage(title, subtitle, author, translator)
-        page.create(contents)
+    def _save_book_html(self, title, author, posts):
+        page = HTMLPage(title, author)
+        page.create(posts)
         image_srcs = page.image_srcs
         html_path = page.save()
         return image_srcs, html_path
@@ -105,7 +107,7 @@ class SendView(View):
                             subtitle,
                             book_cover,
                             book_size,
-                            contents):
+                            posts):
         try:
             # try get from database
             book = Book.objects.get(book_id=book_id)
@@ -121,13 +123,18 @@ class SendView(View):
                 path=''
             )
 
+        book_path = os.path.join(
+            settings.BOOK_BASE_PATH,
+            author,
+            title,
+            'book.html',
+        )
+        if not os.path.exists(book_path):
             # save book html
             image_srcs, html_path = self._save_book_html(
                 title,
-                subtitle,
                 author,
-                translator,
-                contents
+                posts
             )
 
             # save images to db

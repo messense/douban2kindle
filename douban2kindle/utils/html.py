@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 class HTMLPage(object):
 
-    def __init__(self, title, subtitle, author, translator=''):
+    def __init__(self, title, author):
         """Set basic infomation from book
 
         :param title: book title
@@ -28,9 +28,7 @@ class HTMLPage(object):
         :param translator: book translator, optional
         """
         self.title = smart_text(title)
-        self.subtitle = smart_text(subtitle)
         self.author = smart_text(author)
-        self.translator = smart_text(translator)
 
         # init HTML page
         self.page = markup.page()
@@ -54,23 +52,39 @@ class HTMLPage(object):
         self.image_srcs = []
         self._html = ''
 
-    def create(self, contents):
+    def create(self, posts):
         """Create HTML from contents
 
-        :param contents: list of book contents from douban
+        :param posts: list of posts from douban
         """
-        # render book title
-        self.page.h1((self.title,), class_='bookTitle')
-        # render book subtitle
-        self.page.h2((self.subtitle,))
+        title_class = 'bookTitle'
+        if len(posts) > 1:
+            title_class = 'chapter'
+        # render book contents
+        for post in posts:
+            self._render_post(post, title_class)
 
-        authors = [self.author]
-        if self.translator:
-            authors.append('{name} 译'.format(name=self.translator))
+        # render book HTML end
+        self._html = six.text_type(self.page)
+
+    def _render_post(self, post, title_class='bookTitle'):
+        # render book title
+        title = post.get('title')
+        self.page.h1((title,), class_=title_class)
+
+        # render book subtitle
+        subtitle = post.get('subtitle')
+        if subtitle:
+            self.page.h2((subtitle,))
+
+        authors = [post.get('orig_author')]
+        translator = post.get('translator')
+        if translator:
+            authors.append('{name} 译'.format(name=translator))
         # render book author and translator
         self.page.p(tuple(authors), style='text-align: left')
 
-        # render book contents
+        contents = post.get('contents', [])
         for content in contents:
             content_type = content.get('type')
             content_data = content.get('data')
@@ -94,8 +108,8 @@ class HTMLPage(object):
                 # unknown
                 logger.error('Unknow type: %s', content_type)
 
-        # render book HTML end
-        self._html = six.text_type(self.page)
+        # force pagebreak
+        self.page.p(('',), class_='pagebreak')
 
     def _render_pagebreak(self, data):
         # render page break
@@ -138,16 +152,11 @@ class HTMLPage(object):
         text_format = data.get('format')
         if isinstance(text, list):
             # multiple content with footnotes
-            plaintexts, footnotes = self._get_text_list(text)
+            plaintexts = self._get_text_list(text)
             self.page.p(
-                (''.join(plaintexts),),
+                (plaintexts,),
                 style=self._get_text_style(text_format)
             )
-            if footnotes:
-                self.page.p(
-                    tuple(footnotes),
-                    style='color:#333;font-size:13px;'
-                )
         else:
             self.page.p(
                 (smart_text(text),),
@@ -171,10 +180,11 @@ class HTMLPage(object):
         text = data.get('text')
         if not text:
             text = '&nbsp;'
+        text_format = data.get('format')
         self.page.h2(
             (smart_text(text),),
             class_='chapter',
-            style='text-align:center; line-height:2; font-size:13px; min-height: 2em;'
+            style=self._get_text_style(text_format, is_headline=True)
         )
 
     @property
@@ -196,7 +206,7 @@ class HTMLPage(object):
             image = self._get_image(data, index + 1)
         return image
 
-    def _get_text_style(self, fmt):
+    def _get_text_style(self, fmt, is_headline=False):
         style = (
             'text-indent: 2em; line-height:2; '
             'min-height: 2em; text-align:{align};'
@@ -204,28 +214,30 @@ class HTMLPage(object):
 
         if fmt.get('p_bold') == 'true':
             style = '{origin}font-weight:bold;'.format(origin=style)
+        if not is_headline:
+            style = '{origin}text-indent: 2em;'.format(origin=style)
         return style
 
     def _get_text_list(self, text_list):
         plaintexts = []
-        footnotes = []
-        index = 1
-        desc = ''
-        for text_index, text in enumerate(text_list):
+        for text in text_list:
             kind = smart_text(text.get('kind', ''))
             content = smart_text(text.get('content', ''))
             if kind == 'plaintext':
                 plaintexts.append(content)
-                if text_index < len(text_list) - 1:
-                    desc = '[{index}]'.format(index=index)
-                    plaintexts.append(desc)
-                    index += 1
             elif kind == 'footnote':
-                footnotes.append('{desc}{content}'.format(
-                    desc=desc,
-                    content=content
-                ))
+                footnote = '<span style="color:#333; font-size:13px;">[注：{txt}]</span>'.format(  # NOQA
+                    txt=content
+                )
+                plaintexts.append(footnote)
             elif kind == 'code':
-                # TODO: render inline code style
-                plaintexts.append(content)
-        return plaintexts, footnotes
+                code = '<span>{txt}</span>'.format(
+                    txt=content
+                )
+                plaintexts.append(code)
+            elif kind == 'emphasize':
+                plaintexts.append('<span style="font-weight:bold;">{txt}</span>'.format(  # NOQA
+                    txt=content
+                ))
+
+        return ''.join(plaintexts)
