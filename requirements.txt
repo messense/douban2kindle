@@ -2,3 +2,4 @@ Django
 celery
 MySQL-python
 redis
+Pygments

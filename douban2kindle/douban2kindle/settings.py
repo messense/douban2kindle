@@ -153,6 +153,9 @@ CELERY_ACCEPT_CONTENT = ['pickle', 'json', 'msgpack', 'yaml']
 # Book save path
 BOOK_BASE_PATH = os.path.join(BASE_DIR, 'static', 'books')
 
+# code highlight style
+CODE_HIGHLIGHT_STYLE = 'tango'
+
 try:
     from local_settings import *
 except ImportError:

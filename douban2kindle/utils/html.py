@@ -7,6 +7,10 @@ from django.conf import settings
 from django.utils.encoding import smart_text, smart_bytes
 from django.utils import six
 
+from pygments import highlight
+from pygments.lexers import get_lexer_by_name
+from pygments.formatters import HtmlFormatter
+
 from . import markup
 
 
@@ -75,25 +79,30 @@ class HTMLPage(object):
                 # page break
                 self._render_pagebreak(content_data)
             elif content_type == 'illus':
+                # images
                 self._render_illus(content_data)
             elif content_type == 'headline':
+                # headline
                 self._render_headline(content_data)
             elif content_type == 'paragraph':
+                # paragraph
                 self._render_paragraph(content_data)
             elif content_type == 'code':
+                # code
                 self._render_code(content_data)
             else:
+                # unknown
                 logger.error('Unknow type: %s', content_type)
 
         # render book HTML end
         self._html = six.text_type(self.page)
 
     def _render_pagebreak(self, data):
-        # page break
+        # render page break
         self.page.p(('',), class_='pagebreak')
 
     def _render_illus(self, data):
-        # image
+        # render image
         self.page.div()
         # get original image size
         origin = data.get('size').get('orig')
@@ -122,6 +131,7 @@ class HTMLPage(object):
         self.page.div.close()
 
     def _render_paragraph(self, data):
+        # render paragraph
         text = data.get('text')
         if not text:
             text = '&nbsp;'
@@ -145,11 +155,19 @@ class HTMLPage(object):
             )
 
     def _render_code(self, data):
+        # render block code
         code = data.get('text')
         lang = data.get('language')
-        # TODO: render code
+        lexer = get_lexer_by_name(lang)
+        formatter = HtmlFormatter(
+            noclasses=True,
+            style=settings.CODE_HIGHLIGHT_STYLE,
+        )
+        text = highlight(code, lexer, formatter)
+        self.page.add(text)
 
     def _render_headline(self, data):
+        # render headline
         text = data.get('text')
         if not text:
             text = '&nbsp;'
@@ -179,10 +197,11 @@ class HTMLPage(object):
         return image
 
     def _get_text_style(self, fmt):
-        style = ('text-indent: 2em; line-height:2; '
-                'min-height: 2em; text-align:{align};').format(
-                    align=fmt.get('p_align', 'left')
-                )
+        style = (
+            'text-indent: 2em; line-height:2; '
+            'min-height: 2em; text-align:{align};'
+        ).format(align=fmt.get('p_align', 'left'))
+
         if fmt.get('p_bold') == 'true':
             style = '{origin}font-weight:bold;'.format(origin=style)
         return style
